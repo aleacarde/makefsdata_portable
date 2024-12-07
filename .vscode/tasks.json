@@ -21,7 +21,8 @@
             "command": "cmake",
             "args": [
                 "-S", ".",
-                "-B", "build"
+                "-B", "build",
+                "-DENABLE_ASAN"
             ],
             "dependsOn": "Clean Build Directory",
             "group": {

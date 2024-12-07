@@ -1,12 +1,19 @@
 cmake_minimum_required(VERSION 3.15)
 project(makefsdata_portable LANGUAGES C)
 
+option(ENABLE_ASAN "Enable AddressSanitizer" ON)
 option(BUILD_SHARED_LIBS "Build shared libs" OFF)
 option(BUILD_TESTS "Build tests" ON)
 
-set(CMAKE_BUILD_TYPE Debug)
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=address")
-set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=address")
+
+if(ENABLE_ASAN)
+    message(STATUS "Building with AddressSanitizer enabled")
+    set(SANITIZER_FLAGS "-fsanitize=address -fno-omit-frame-pointer")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${SANITIZER_FLAGS}")
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${SANITIZER_FLAGS}")
+    set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} ${SANITIZER_FLAGS}")
+    set(CMAKE_BUILD_TYPE Debug)
+endif()
 
 # Set defaults for C compilation
 if(MSVC)

@@ -26,6 +26,7 @@ jobs:
             run: |
               sudo apt-get update
               sudo apt-get install -y build-essential cmake
+              sudo apt-get install gcc clang
               sudo apt-get install -y valgrind
         
           - name: Install Dependencies (macOS)
@@ -36,7 +37,7 @@ jobs:
               brew install cmake
 
           - name: Configure CMake
-            run: cmake -B build -S .
+            run: cmake -B build -S . -DENABLE_ASAN=ON
         
           - name: Build the project
             run: cmake --build build
