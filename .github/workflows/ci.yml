@@ -24,9 +24,20 @@ jobs:
           - name: Install Dependencies (Linux)
             if: runner.os == 'Linux'
             run: |
+              sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
               sudo apt-get update
+
+              gccversion=$(apt-cache pkgnames | sed -nr 's/^gcc-(([0-9]+\.?)+)$/\1/p' | sort -n | tail -n1 )
+              echo "The latest available gcc version: $gccversion"
+
+              asanversion=$(apt-cache pkgnames | sed -nr 's/^libasan(([0-9]+\.?)+)$/\1/p' | sort -n | tail -n1 )
+              echo "The latest available libasan version: $asanversion"
+
               sudo apt-get install -y build-essential cmake
-              sudo apt-get install -y gcc-13 libasan8 clang
+              sudo apt-get install -y gcc-$gccversion 
+              sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-$gccversion 60
+              
+              sudo apt-get install -y libasan$asanversion clang
               sudo apt-get install -y valgrind
     
         
