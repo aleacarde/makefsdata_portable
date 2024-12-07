@@ -10,7 +10,7 @@ jobs:
     build_and_test:
         strategy:
             matrix:
-                os: [ macos-latest ]
+                os: [ macos-latest, ubuntu-latest ]
         runs-on: ${{ matrix.os }}
 
         steps:
@@ -26,6 +26,7 @@ jobs:
             run: |
               sudo apt-get update
               sudo apt-get install -y build-essential cmake
+              sudo apt-get install -h valgrind
         
           - name: Install Dependencies (macOS)
             if: runner.os == 'macOS'
@@ -35,10 +36,15 @@ jobs:
               brew install cmake
 
           - name: Configure CMake
-            run: cmake -B build -S . -DBUILD_TESTS=ON -DCMAKE_BUILD_TYPE=Debug
+            run: cmake -B build -S .
         
           - name: Build the project
-            run: cmake --build build --config Debug
+            run: cmake --build build
+
+          - name: Run tests with Valgrind (Linux only)
+            if: runner.os == 'Linux'
+            run: |
+              valgrind --leak-check=full --show-leak-kinds=all ./build/bin/tests/test_platform
 
           - name: Run tests
             run: ctest --test-dir build --output-on-failure

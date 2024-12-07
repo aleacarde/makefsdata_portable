@@ -21,8 +21,7 @@
             "command": "cmake",
             "args": [
                 "-S", ".",
-                "-B", "build",
-                "-DBUILD_TESTS=ON"
+                "-B", "build"
             ],
             "dependsOn": "Clean Build Directory",
             "group": {
