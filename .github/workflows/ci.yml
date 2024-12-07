@@ -40,12 +40,12 @@ jobs:
             run: cmake -B build -S . -DENABLE_ASAN=ON
         
           - name: Build the project
-            run: cmake --build build
+            run: |
+              cmake --build build
+              export LD_PRELOAD=$(gcc -print-file-name=libasan.so)
+              ASAN_OPTIONS=detect_leaks=1 ctest --test-dir build --output-on-failure
 
           - name: Run tests with Valgrind (Linux only)
             if: runner.os == 'Linux'
             run: |
               valgrind --leak-check=full --show-leak-kinds=all ./build/bin/tests/test_platform
-
-          - name: Run tests
-            run: ctest --test-dir build --output-on-failure

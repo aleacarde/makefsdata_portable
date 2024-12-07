@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.15)
 project(makefsdata_portable LANGUAGES C)
 
-option(ENABLE_ASAN "Enable AddressSanitizer" ON)
+option(ENABLE_ASAN "Enable AddressSanitizer" OFF)
 option(BUILD_SHARED_LIBS "Build shared libs" OFF)
 option(BUILD_TESTS "Build tests" ON)
 
