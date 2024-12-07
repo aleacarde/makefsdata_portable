@@ -52,7 +52,9 @@ jobs:
             run: |
               cmake --build build
               export LD_PRELOAD=$(gcc -print-file-name=libasan.so)
-              ctest --test-dir build --output-on-failure
+        
+          - name: Test the project with ctest
+            run: ctest --test-dir build --output-on-failure
 
           - name: Run tests with Valgrind (Linux only)
             if: runner.os == 'Linux'
