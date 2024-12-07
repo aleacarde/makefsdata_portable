@@ -26,8 +26,9 @@ jobs:
             run: |
               sudo apt-get update
               sudo apt-get install -y build-essential cmake
-              sudo apt-get install gcc clang
+              sudo apt-get install -y gcc-13 libasan8 clang
               sudo apt-get install -y valgrind
+    
         
           - name: Install Dependencies (macOS)
             if: runner.os == 'macOS'
@@ -43,7 +44,7 @@ jobs:
             run: |
               cmake --build build
               export LD_PRELOAD=$(gcc -print-file-name=libasan.so)
-              ASAN_OPTIONS=detect_leaks=1 ctest --test-dir build --output-on-failure
+              ctest --test-dir build --output-on-failure
 
           - name: Run tests with Valgrind (Linux only)
             if: runner.os == 'Linux'
