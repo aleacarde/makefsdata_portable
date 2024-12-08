@@ -35,7 +35,6 @@ jobs:
               sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-$gccversion 60
               
               sudo apt-get install -y libasan$asanversion clang
-              sudo apt-get install -y valgrind
     
         
           - name: Install Dependencies (macOS)

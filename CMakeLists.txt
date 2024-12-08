@@ -1,6 +1,11 @@
 cmake_minimum_required(VERSION 3.15)
 project(makefsdata_portable LANGUAGES C)
 
+if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE Debug)
+endif()
+
+
 option(ENABLE_ASAN "Enable AddressSanitizer" OFF)
 option(BUILD_SHARED_LIBS "Build shared libs" OFF)
 option(BUILD_TESTS "Build tests" ON)
@@ -12,7 +17,6 @@ if(ENABLE_ASAN)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${SANITIZER_FLAGS}")
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${SANITIZER_FLAGS}")
     set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} ${SANITIZER_FLAGS}")
-    set(CMAKE_BUILD_TYPE Debug)
 endif()
 
 # Set defaults for C compilation
@@ -36,13 +40,21 @@ set_target_properties(makefsdata_portable PROPERTIES
 add_executable(makefsdata_portable_cli src/main.c)
 target_link_libraries(makefsdata_portable_cli makefsdata_portable)
 set_target_properties(makefsdata_portable_cli PROPERTIES
-    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+    RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/bin
 )
 
-# Installation rules
-install(TARGETS makefsdata_portable_cli RUNTIME DESTINATION bin)
-install(TARGETS makefsdata_portable ARCHIVE DESTINATION lib)
-install(FILES include/makefsdata_portable.h DESTINATION include)
+set(INSTALL_BIN_DIR ${CMAKE_INSTALL_PREFIX}/bin)
+set(INSTALL_LIB_DIR ${CMAKE_INSTALL_PREFIX}/lib)
+set(INSTALL_INCLUDE_DIR ${CMAKE_INSTALL_PREFIX}/include)
+
+# Install executables
+install(TARGETS makefsdata_portable_cli RUNTIME DESTINATION ${INSTALL_BIN_DIR})
+
+# Install libraries
+install(TARGETS makefsdata_portable ARCHIVE DESTINATION ${INSTALL_LIB_DIR})
+
+# Install headers
+install(DIRECTORY ${CMAKE_SOURCE_DIR}/include/ DESTINATION ${INSTALL_INCLUDE_DIR})
 
 # Tests
 if(BUILD_TESTS)

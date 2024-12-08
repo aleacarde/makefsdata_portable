@@ -1,0 +1,96 @@
+name: Build and Package
+
+on:
+    workflow_run:
+        workflows:
+            - CI # Name of the ci.yml workflow
+        types:
+            - completed
+
+jobs:
+    build-ubuntu:
+        runs-on: ubuntu-latest
+
+        if: ${{ github.event.workflow_run.conclusion == 'success' && startsWith(github.ref, 'refs/tags/v') }}
+
+        steps:
+            # Checkout the repository
+            - name: Checkout code
+              uses: actions/checkout@v4
+            
+            # Install dependencies
+            - name: Install dependencies
+              run: |
+                sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
+                sudo apt-get update
+
+                gccversion=$(apt-cache pkgnames | sed -nr 's/^gcc-(([0-9]+\.?)+)$/\1/p' | sort -n | tail -n1 )
+                echo "The latest available gcc version: $gccversion"
+
+                asanversion=$(apt-cache pkgnames | sed -nr 's/^libasan(([0-9]+\.?)+)$/\1/p' | sort -n | tail -n1 )
+                echo "The latest available libasan version: $asanversion"
+
+                sudo apt-get install -y build-essential cmake
+                sudo apt-get install -y gcc-$gccversion 
+                sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-$gccversion 60
+              
+                sudo apt-get install -y libasan$asanversion clang
+            
+            # Step 3: Configure and Build
+            - name: Configure and Build
+              run: |
+                cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+                cmake --build build
+            
+            # Step 4: Package Build Artifacts
+            - name: Package Build Artifacts
+              run: |
+                mkdir package
+                cp -r build/bin package/
+                cp -r build/lib package/
+                cp -r include package/
+                tar -czvf makefsdataportable-ubuntu-${GITHUB_REF##*/}.tar.gz package
+        
+            # Step 5: Upload Artifact
+            - name: Upload Ubuntu Artifact
+              uses: actions/upload-artifact@v4
+              with:
+                name: makefsdataportable-ubuntu-${GITHUB_REF##*/}
+                path: makefsdataportable-ubuntu-${GITHUB_REF##*/}.tar.gz
+    
+    build-macos:
+        runs-on: macos-latest
+        if: ${{ github.event.workflow_run.conclusion == 'success' && startsWith(github.ref, 'refs/tags/v') }}
+
+        steps:
+            # Step 1: Checkout the repository
+            - name: Checkout code
+              uses: actions/checkout@v4
+            
+            # Step 2: Install dependencies
+            - name: Install dependencies
+              run: |
+                brew update
+                brew upgrade
+                brew install cmake
+            
+            # Step 3: Configure and Build
+            - name: Configure and Build
+              run: |
+                cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+                cmake --build build
+            
+            # Step 4: Package Build Artifacts
+            - name: Package Build Artifacts
+              run: |
+                mkdir package
+                cp -r build/bin package/
+                cp -r build/lib package/
+                cp -r include package/
+                tar -czvf makefsdataportable-macos-${GITHUB_REF##*/}.tar.gz package
+            
+            - name: Upload macOS Artifact
+              uses: actions/upload-artifact@v4
+              with:
+                name: makefsdataportable-macos-${GITHUB_REF##*/}
+                path: makefsdataportable-macos-${GITHUB_REF##*/}.tar.gz
