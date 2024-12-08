@@ -90,3 +90,41 @@ jobs:
               with:
                 name: makefsdataportable-macos-${{ github.ref_name }}
                 path: makefsdataportable-macos-${{ github.ref_name }}.tar.gz
+    
+    build-windows:
+        runs-on: windows-latest
+
+        steps:
+            # Checkout the repository
+            - name: Checkout code
+              uses: actions/checkout@v4
+            
+            # Install Dependencies
+            - name: Install CMake and MSBuild Tools
+              run: |
+                choco install cmake --installargs 'ADD_CMAKE_TO_PATH=System' -y
+                choco install visualstudio2022buildtools -y
+                choco install ninja -y
+            
+            # Configure and Build
+            - name: Configure CMake
+              run: cmake -S . -B build -G "Ninja" -DCMAKE_BUILD_TYPE=Release
+            
+            - name: Build Project
+              run: cmake --build build
+            
+            # Package Build Artifacts
+            - name: Package Build Artifacts
+              run: |
+                mkdir package
+                cp -r build/bin package/
+                cp -r build/lib package/
+                cp -r include package/
+                tar -czvf makefsdataportable-windows-${{ github.ref_name }}.tar.gz package
+
+           # Upload Artifact
+            - name: Upload Artifact
+              uses: actions/upload-artifact@v4
+              with:
+                name: makefsdataportable-windows-${{ github.ref_name }}
+                path: ./makefsdataportable-windows-${{ github.ref_name }}.tar.gz

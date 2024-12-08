@@ -10,7 +10,7 @@ jobs:
     build_and_test:
         strategy:
             matrix:
-                os: [ macos-latest, ubuntu-latest ]
+                os: [ macos-latest, ubuntu-latest, windows-latest ]
         runs-on: ${{ matrix.os }}
 
         steps:
@@ -44,13 +44,23 @@ jobs:
               brew upgrade
               brew install cmake
 
-          - name: Configure CMake
+          - name: Install Dependencies (Windows)
+            if: ${{ runner.os == 'Windows' }}
+            run: |
+              choco install cmake --installargs 'ADD_CMAKE_TO_PATH=System' -y
+              choco install visualstudio2022buildtools -y
+              choco install ninja -y
+
+          - name: Configure CMake (macOS and Linux)
+            if: ${{ runner.os == 'macOS' || runner.os == 'Linux' }}
             run: cmake -B build -S . -DENABLE_ASAN=ON
+
+          - name: Configure CMake (Windows)
+            if: ${{ runner.os == 'Windows' }}
+            run: cmake -S . -B build -G "Ninja" -DCMAKE_BUILD_TYPE=Release
         
           - name: Build the project
-            run: |
-              cmake --build build
-              export LD_PRELOAD=$(gcc -print-file-name=libasan.so)
+            run: cmake --build build
         
           - name: Test the project with ctest
             run: ctest --test-dir build --output-on-failure
