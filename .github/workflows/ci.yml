@@ -25,6 +25,7 @@ jobs:
                 key: ${{ runner.os }}-apt-cache-v1
         
           - name: Debug Cache Hit (Linux)
+            if: ${{ runner.os }} == 'Linux'
             run: ls -l /var/cache/apt/archives || echo "Cache not restored"
 
           # Install dependencies
