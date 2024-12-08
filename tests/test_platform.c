@@ -70,7 +70,13 @@ void tearDown(void) {
 #else
     char cmd[1024];
     snprintf(cmd, sizeof(cmd), "rm -rf %s", temp_dir);
-    system(cmd);
+    int ret = system(cmd);
+
+    // Check return value for system command
+    if (ret != 0) {
+        fprintf(stderr, "Warning: system command failed with return code %d\n", ret);
+    }
+
 #endif
 }
 
