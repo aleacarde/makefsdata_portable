@@ -46,14 +46,14 @@ jobs:
                 cp -r build/bin package/
                 cp -r build/lib package/
                 cp -r include package/
-                tar -czvf makefsdataportable-ubuntu-${GITHUB_REF##*/}.tar.gz package
+                tar -czvf makefsdataportable-ubuntu-${{ github.ref_name }}.tar.gz package
         
             # Step 5: Upload Artifact
             - name: Upload Ubuntu Artifact
               uses: actions/upload-artifact@v4
               with:
-                name: makefsdataportable-ubuntu-${GITHUB_REF##*/}
-                path: makefsdataportable-ubuntu-${GITHUB_REF##*/}.tar.gz
+                name: makefsdataportable-ubuntu-${{ github.ref_name }}
+                path: makefsdataportable-ubuntu-${{ github.ref_name }}.tar.gz
     
     build-macos:
         runs-on: macos-latest
@@ -83,10 +83,10 @@ jobs:
                 cp -r build/bin package/
                 cp -r build/lib package/
                 cp -r include package/
-                tar -czvf makefsdataportable-macos-${GITHUB_REF##*/}.tar.gz package
+                tar -czvf makefsdataportable-macos-${{ github.ref_name }}.tar.gz package
             
             - name: Upload macOS Artifact
               uses: actions/upload-artifact@v4
               with:
-                name: makefsdataportable-macos-${GITHUB_REF##*/}
-                path: makefsdataportable-macos-${GITHUB_REF##*/}.tar.gz
+                name: makefsdataportable-macos-${{ github.ref_name }}
+                path: makefsdataportable-macos-${{ github.ref_name }}.tar.gz
