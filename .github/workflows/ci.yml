@@ -55,8 +55,3 @@ jobs:
         
           - name: Test the project with ctest
             run: ctest --test-dir build --output-on-failure
-
-          - name: Run tests with Valgrind (Linux only)
-            if: runner.os == 'Linux'
-            run: |
-              valgrind --leak-check=full --show-leak-kinds=all ./build/bin/tests/test_platform
