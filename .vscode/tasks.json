@@ -22,7 +22,7 @@
             "args": [
                 "-S", ".",
                 "-B", "build",
-                "-DENABLE_ASAN"
+                "-DENABLE_ASAN=ON"
             ],
             "dependsOn": "Clean Build Directory",
             "group": {

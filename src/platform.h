@@ -8,9 +8,11 @@ extern "C" {
 #include <stddef.h>
 #include <stdio.h>
 
+#define MAX_FILENAME_LENGTH 256
+
 // This structure holds information about a directory entry (file or directory).
 typedef struct {
-    char *name;         // The filename (not full path), dynamically allocated if needed
+    char name[MAX_FILENAME_LENGTH];         // The filename. Max filename length in macOS and linux is 255 bytes 
     int is_dir;         // 1 if directory, 0 if regualr file.
     size_t size;        // Size in bytes if a file, 0 if directory
 } platform_file_info;

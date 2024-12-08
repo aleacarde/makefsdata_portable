@@ -188,20 +188,8 @@ int platform_readdir(platform_dir_handle *dh, platform_file_info *info){
         return platform_readdir(dh, info);
     }
 
-    // Copy filename since next readdir call will overwrite it
-    size_t nlen = strlen(entry->d_name) + 1;
-    char *fname = (char*)malloc(nlen);
-    if (!fname) {
-        platform_set_error("Out of memory");
-        return -1;
-    }
-
-    info->name = malloc(nlen);
-    if (!info->name) {
-        perror("malloc failed");
-        return -1; // Indicate failure
-    }
-    strcpy(info->name, entry->d_name);
+    strncpy(info->name, entry->d_name, MAX_FILENAME_LENGTH - 1);
+    info->name[MAX_FILENAME_LENGTH - 1] = '\0';
 
     // Determine if directory using stat
     struct stat st;
@@ -285,8 +273,6 @@ int platform_stat_file(const char *path, platform_file_info *info) {
     }
 
 #endif
-
-    info->name = NULL; // not required here
     return 0;
 }
 

@@ -100,11 +100,7 @@ void test_directory_ops(void) {
             file_count++;
         }
     }
-    while (platform_readdir(dh, &info) == 0) {
-            printf("Found: %s\n", info.name);
-            printf("[DEBUG] Freed memory for: %s\n", info.name);
-            free(info.name); // because we allocated in platform_readdir 
-    }
+
     TEST_ASSERT_MESSAGE(rc == -1, "readdir should return -1 at the end");
 
     TEST_ASSERT_EQUAL_INT_MESSAGE(1, file_count, "Expected 1 file in dir");
