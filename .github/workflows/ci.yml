@@ -17,6 +17,16 @@ jobs:
           - name: Checkout code
             uses: actions/checkout@v4
 
+          - name: Cache APT Packages (Linux)
+            if: ${{ runner.os }} == 'Linux'
+            uses: actions/cache@v4
+            with:
+                path: /var/cache/apt/archives
+                key: ${{ runner.os }}-apt-cache-v1
+        
+          - name: Debug Cache Hit (Linux)
+            run: ls -l /var/cache/apt/archives || echo "Cache not restored"
+
           # Install dependencies
           - name: Install Dependencies (Linux)
             if: runner.os == 'Linux'
@@ -36,6 +46,17 @@ jobs:
               
               sudo apt-get install -y libasan$asanversion clang
     
+          - name: Cache Homebrew Dependencies (macOS)
+            if: ${{ runner.os }} == 'macOS'
+            uses: actions/cache@v4
+            with:
+                path: |
+                  /usr/local/Cellar
+                  /opt/homebrew/Cellar
+                key: ${{ runner.os }}-brew-cache-v1
+        
+          - name: Debug Cache Hit (macOS)
+            run: ls -l /usr/local/Cellar || echo "Cache not restored"
         
           - name: Install Dependencies (macOS)
             if: runner.os == 'macOS'
@@ -43,13 +64,29 @@ jobs:
               brew update
               brew upgrade
               brew install cmake
+        
+          - name: Cache Chocolatey (Windows)
+            if: ${{ runner.os == 'Windows' }}
+            uses: actions/cache@v4
+            with:
+                path: C:\ProgramData\chocolatey
+                key: ${{ runner.os }}-choco-cache
+            
+          - name: Debug Cache Hit (Windows)
+            run: |
+              if (Test-Path "C:\ProgramData\chocolatey") {
+                Write-Host "Cache restored successfully"
+                Get-ChildItem -Path "C:\ProgramData\chocolatey" -Recurse | Select-Object FullName, Length | Format-Table
+                } else {
+                  Write-Host "Cache not restored"
+                }
+            shell: pwsh
 
           - name: Install Dependencies (Windows)
             if: ${{ runner.os == 'Windows' }}
             run: |
-              choco install cmake --installargs 'ADD_CMAKE_TO_PATH=System' -y
+              choco install cmake --installargs 'ADD_CMAKE_TO_PATH=System' ninja -y
               choco install visualstudio2022buildtools -y
-              choco install ninja -y
 
           - name: Configure CMake (macOS and Linux)
             if: ${{ runner.os == 'macOS' || runner.os == 'Linux' }}
