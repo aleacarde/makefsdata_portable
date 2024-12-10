@@ -9,6 +9,7 @@ extern "C" {
 #include <stdio.h>
 
 #define MAX_FILENAME_LENGTH 256
+#define MAX_PATH_LENGTH 1024
 
 // This structure holds information about a directory entry (file or directory).
 typedef struct {

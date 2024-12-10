@@ -73,17 +73,7 @@ jobs:
             with:
                 path: C:\ProgramData\chocolatey
                 key: ${{ runner.os }}-choco-cache
-            
-          - name: Debug Cache Hit (Windows)
-            if: ${{ runner.os == 'Windows' }}
-            run: |
-              if (Test-Path "C:\ProgramData\chocolatey") {
-                Write-Host "Cache restored successfully"
-                Get-ChildItem -Path "C:\ProgramData\chocolatey" -Recurse | Select-Object FullName, Length | Format-Table
-                } else {
-                  Write-Host "Cache not restored"
-                }
-            shell: pwsh
+
 
           - name: Install Dependencies (Windows)
             if: ${{ runner.os == 'Windows' }}

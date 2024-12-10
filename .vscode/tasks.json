@@ -1,79 +1,175 @@
 {
     "version": "2.0.0",
     "tasks": [
-        {
-            "label": "Clean Build Directory",
-            "type": "shell",
-            "command": "rm",
-            "args": [
-                "-rf",
-                "build"
-            ],
-            "group": {
-                "kind": "build",
-                "isDefault": false
-            },
-            "detail": "Remove the build directory to clean the build environment."
-        },
-        {
-            "label": "CMake: Configure",
-            "type": "shell",
-            "command": "cmake",
-            "args": [
-                "-S", ".",
-                "-B", "build",
-                "-DCMAKE_BUILD_TYPE=Debug",
-                "-DCMAKE_ISNTALL_PREFIX=${workspaceFolder}",
-                "-DENABLE_ASAN=ON"
-            ],
-            "dependsOn": "Clean Build Directory",
-            "group": {
-                "kind": "build",
-                "isDefault": false
-            },
-            "detail": "Run CMake to configure the project."
-        },
-        {
-            "label": "CMake: Build",
-            "type": "shell",
-            "command": "cmake",
-            "args": [
-                "--build", "build",
-                "--target", "all",
-            ],
-            "dependsOn": "CMake: Configure",
-            "group": {
-                "kind": "build",
-                "isDefault": true
-            },
-            "detail": "Run CMake to build the project."
-        },
-        {
-            "label": "Run Tests",
-            "type": "shell",
-            "command": "ctest",
-            "args": [
-                "--test-dir", "build",
-                "--output-on-failure"
-            ],
-            "group": "test",
-            "detail": "Run the tests using CTest."
-        },
-        {
-            "label": "CMake: Install",
-            "type": "shell",
-            "command": "cmake",
-            "args": [
-                "--install", "build",
-                "--prefix", "${workspaceFolder}"
-            ],
-            "dependsOn": "CMake: Build",
-            "group": {
-                "kind": "build",
-                "isDefault": false
-            },
-            "problemMatcher": [],
-            "detail": "Run cmake to create prebuilt binaries/libraries"
-        }
+      // ===== Clean Tasks =====
+      {
+        "label": "Clean Build macOS",
+        "type": "shell",
+        "command": "bash",
+        "args": [
+          "--noprofile",
+          "--norc",
+          "-c",
+          "if [ -d build-macos ]; then echo \"Cleaning macOS build directory...\"; rm -rf build-macos; fi"
+        ],
+        "group": "build",
+        "problemMatcher": []
+      },
+      {
+        "label": "Clean Build Linux",
+        "type": "shell",
+        "command": "bash",
+        "args": [
+          "--noprofile",
+          "--norc",
+          "-c",
+          "if [ -d build-linux ]; then echo \"Cleaning Linux build directory...'\"; rm -rf build-linux; fi"
+        ],
+        "group": "build",
+        "problemMatcher": []
+      },
+      {
+        "label": "Clean Build Windows",
+        "type": "shell",
+        "command": "bash",
+        "args": [
+          "--noprofile",
+          "--norc",
+          "-c",
+          "if [ -d build-windows ]; then echo \"Cleaning Windows build directory...\"; rm -rf build-windows; fi\n"
+        ],
+        "group": "build",
+        "problemMatcher": []
+      },
+      {
+        "label": "Clean All Builds",
+        "type": "shell",
+        "command": "bash",
+        "args": [
+          "--noprofile",
+          "--norc",
+          "-c",
+          "for dir in build-macos build-linux build-windows; do if [ -d $dir ]; then echo \"Cleaning $dir...\"; rm -rf $dir; fi; done"
+        ],
+        "group": "build",
+        "problemMatcher": []
+      },
+
+      // ===== Configure Tasks =====
+      {
+        "label": "CMake: Configure macOS",
+        "type": "shell",
+        "command": "cmake",
+        "args": [
+          "-S", ".",
+          "-B", "build-macos",
+          "-DCMAKE_BUILD_TYPE=Debug",
+          "-DBUILD_TESTING=ON"
+        ],
+        "dependsOn": "Clean Build macOS",
+        "group": "build",
+        "problemMatcher": []
+      },
+
+      {
+        "label": "CMake: Configure Windows",
+        "type": "shell",
+        "command": "cmake",
+        "args": [
+          "-S", ".",
+          "-B", "build-windows",
+          "-DCMAKE_BUILD_TYPE=Debug",
+          "-DCMAKE_TOOLCHAIN_FILE=windows-toolchain.cmake",
+          "-DBUILD_TESTING=ON",
+          "-G", "Ninja"
+        ],
+        "dependsOn": "Clean Build Windows",
+        "group": "build",
+        "problemMatcher": []
+      },
+
+      // ===== Build Tasks =====
+      {
+        "label": "CMake: Build macOS",
+        "type": "shell",
+        "command": "cmake",
+        "args": [
+            "--build", "build-macos"
+        ],
+        "dependsOn": "CMake: Configure macOS",
+        "group": "build"
+      },
+      {
+        "label": "CMake: Build Linux",
+        "type": "shell",
+        "command": "docker",
+        "args": [
+          "run",
+          "--rm",
+          "-v", "${workspaceFolder}:/workspace",
+          "-w", "/workspace",
+          "ubuntu:latest",
+          "/bin/bash",
+          "-c",
+          "apt-get update && apt-get install -y cmake build-essential ninja-build && cmake -S . -B build-linux -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=ON && cmake --build build-linux"
+        ],
+        "dependsOn": "Clean Build Linux",
+        "group": "build",
+        "problemMatcher": []
+      },
+      {
+        "label": "CMake: Build Windows",
+        "type": "shell",
+        "command": "cmake",
+        "args": [
+            "--build", "build-windows",
+            "--config", "Debug"
+        ],
+        "dependsOn": "CMake: Configure Windows",
+        "group": "build"
+      },
+
+      // ===== Run Tests Tasks =====
+      {
+        "label": "Run macOS Tests",
+        "type": "shell",
+        "command": "ctest",
+        "args": [
+          "--test-dir", "build-macos",
+          "--output-on-failure"
+        ],
+        "dependsOn": "CMake: Build macOS",
+        "group": "test",
+        "problemMatcher": []
+      },
+      {
+        "label": "Run Linux Tests",
+        "type": "shell",
+        "command": "docker",
+        "args": [
+          "run",
+          "--rm",
+          "-v", "${workspaceFolder}:/workspace",
+          "-w", "/workspace",
+          "ubuntu:latest",
+          "/bin/bash",
+          "-c",
+          "cd build-linux && ctest --output-on-failure"
+        ],
+        "dependsOn": "CMake: Build Linux",
+        "group": "test",
+        "problemMatcher": []
+      },
+      {
+        "label": "Run Windows Tests",
+        "type": "shell",
+        "command": "wine",
+        "args": [
+          "./build-windows/bin/tests/test_platform.exe"
+        ],
+        "dependsOn": "CMake: Build Windows",
+        "group": "test",
+        "problemMatcher": []
+      }
     ]
-}
+  }

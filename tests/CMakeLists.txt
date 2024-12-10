@@ -18,7 +18,7 @@ if(ENABLE_ASAN)
     target_link_options(test_platform PRIVATE -fsanitize=address)
 endif()
 
-add_test(NAME platform_tests COMMAND test_platform)
+add_test(NAME platform_tests COMMAND ${CMAKE_BINARY_DIR}/bin/tests/test_platform)
 
 if(ENABLE_ASAN AND UNIX)
     find_program(GCC_PATH gcc)

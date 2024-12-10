@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdarg.h>
+#include <wchar.h>
 
 static char g_platform_error[256]; // Global error buffer
 
@@ -23,26 +24,28 @@ const char* platform_get_last_error(void) {
 
 // Convert UTF-8 path to wide char (UTF-16)
 // Returns 0 on success, nonzero on error.
-static int platform_convert_path_to_wchar(const char *path, WCHAR **wpath){
-    *wpath = NULL;
-    int wlen = MultiByteToWideChar(CP_UTF8, 0, path, -1, NULL, 0);
-    if (wlen == 0) {
-        platform_set_error("Failed to convert path to wchar: %s", path);
+static int platform_convert_path_to_wchar(const char *input_path, WCHAR **wpath){
+    if (!input_path || !wpath) {
+        platform_set_error("Invalid arguments to platform_convert_path_to_wchar\n");
         return -1;
     }
 
-    *path = (WCHAR*)malloc(wlen * sizeof(WCHAR));
+    // Convert input path to wide characters
+    size_t len = strlen(input_path) + 1; // +1 for null terminator
+    size_t wlen = mbstowcs(NULL, input_path, 0) + 1; // Get required wide-char length
+
+    if (wlen == len-1) {
+        platform_set_error("Error converting input path to wide characters\n");
+        return -1;
+    }
+
+    *wpath = (WCHAR*)malloc(wlen * sizeof(WCHAR)); // Allocate memory for WCHAR string
     if (!*wpath) {
-        platform_set_error("Out of memory");
+        platform_set_error("Memory allocation failed in platform_convert_path_to_wchar\n");
         return -1;
     }
 
-    if (MultiByteToWideChar(CP_UTF8, 0, path, -1, *wpath, wlen) == 0) {
-        platform_set_error("Failed to convert path to wchar: %s", path);
-        free(*wpath);
-        *wpath = NULL;
-        return -1;
-    }
+    mbstowcs(*wpath, input_path, wlen); // Perform conversion
 
     return 0;
 }
@@ -59,15 +62,15 @@ static int platform_convert_path_to_wchar(const char *path, WCHAR **wpath){
 struct platform_dir_handle {
 #ifdef _WIN32
     HANDLE hFind;
-    WIN32_FIND_DATAA fdata;
+    WIN32_FIND_DATAW fdata;
     int first;
-    char searchPath[1024];
+    char searchPath[MAX_PATH_LENGTH];
 #else
     DIR *d;
 #endif
 };
 
-platform_dir_handle* platform_opendir(const char *path) {
+platform_dir_handle* platform_opendir(const char *searchPath) {
 
 #ifdef _WIN32
     platform_dir_handle *dh = (platform_dir_handle*)malloc(sizeof(platform_dir_handle));
@@ -77,35 +80,42 @@ platform_dir_handle* platform_opendir(const char *path) {
     }
     memset(dh, 0, sizeof(*dh));
 
-    // Construct "path/*"
-    size_t plen = strlen(path);
-    char temp[1024];
-    if (plen + 3 > sizeof(temp)) {
-        platform_set_error("Path too long");
-        free(dh);
-        return NULL;
-    }
-    snprintf(temp, sizeof(temp), "%s%c*", path, PLATFORM_PATH_SEP);
-
-    WCHAR *wsearch = NULL;
-    if (platform_convert_path_to_wchar(temp, &wsearch) != 0) {
+    // Ensure searchPath fits in buffer
+    if (strlen(searchPath) + 2 > MAX_PATH_LENGTH) {
+        platform_set_error("Search path is too long");
         free(dh);
         return NULL;
     }
 
-    dh->searchPath = wsearch;
-    dh->hFind = FindFirstFileW(dh->searchpath, &dh->fdata);
+    // Copy and normalize searchPath
+    snprintf(dh->searchPath, MAX_PATH_LENGTH, "%s", searchPath);
+    size_t len = strlen(dh->searchPath);
+    if (len > 0 && dh->searchPath[len - 1] == '\\') {
+        dh->searchPath[len - 1] = '\0';  // Remove trailing backslash
+    }
+    strncat(dh->searchPath, "\\*", MAX_PATH_LENGTH - strlen(dh->searchPath) - 1);
+
+    // Convert searchPath to wide characters
+    wchar_t wideSearchPath[MAX_PATH_LENGTH];
+    size_t convertedChars = 0;
+    if (mbstowcs_s(&convertedChars, wideSearchPath, MAX_PATH_LENGTH, dh->searchPath, _TRUNCATE) != 0) {
+        platform_set_error("Failed to convert searchPath to WCHAR");
+        free(dh);
+        return NULL;
+    }
+
+    // Perform the first directory search
+    dh->hFind = FindFirstFileW(wideSearchPath, &dh->fdata);
     if (dh->hFind == INVALID_HANDLE_VALUE) {
-        platform_set_error("Failed to open directory: %s", path);
-        free(dh->searchPath);
+        platform_set_error("Failed to open directory: %s", searchPath);
         free(dh);
         return NULL;
     }
     dh->first = 1;
 #else
-    DIR *d = opendir(path);
+    DIR *d = opendir(searchPath);
     if (!d) {
-        platform_set_error("Failed to open directory: %s (errno=%d)", path, errno);
+        platform_set_error("Failed to open directory: %s (errno=%d)", searchPath, errno);
         return NULL;
     }
     platform_dir_handle *dh = (platform_dir_handle*)malloc(sizeof(platform_dir_handle));
@@ -132,42 +142,32 @@ int platform_readdir(platform_dir_handle *dh, platform_file_info *info){
     WIN32_FIND_DATAW *fdata = &dh->fdata;
     if (!dh->first) {
         if (!FindNextFileW(dh->hFind, fdata)) {
-            // No more entries
+            printf("No more entries found\n");
             return -1;
         }
     } else {
         dh->first = 0;
     }
 
+    // Debug: Print the retrieved entry
+    wprintf(L"Retrieved: %ls\n", fdata->cFileName);
+
     // Skip "." and ".."
     if (wcscmp(fdata->cFileName, L".") == 0 || wcscmp(fdata->cFileName, L"..") == 0) {
         return platform_readdir(dh, info);
     }
 
-    // Convert wchar filename back to UTF-8
-    int needed = WideCharToMultiByte(CP_UTF8, 0, fdata->cFileName, -1, NULL, 0, NULL, NULL);
-    if (needed <= 0) {
+    if (WideCharToMultiByte(CP_UTF8, 0, fdata->cFileName, -1, info->name, MAX_FILENAME_LENGTH, NULL, NULL) == 0) {
         platform_set_error("Failed to convert filename to UTF-8");
         return -1;
     }
 
-    char *fname = (char*)malloc(needed);
-    if (!fname) {
-        platform_set_error("Out of memory");
-        return -1;
-    }
-
-    if (WideCharToMultiByte(CP_UTF8, 0, fdata->cFileName, -1, fname, needed, NULL, NULL) == 0) {
-        platform_set_error("Failed to convert filename to UTF-8");
-        free(fname);
-        return -1;
-    }
-
-    info->name = fname; // caller should free after use
     info->is_dir = (fdata->dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) ? 1 : 0;
+    printf("Processing entry: %ls\n", fdata->cFileName);
+    printf("Attributes: 0x%lu, is_dir: %d\n", fdata->dwFileAttributes, info->is_dir);
 
     if (!info->is_dir) {
-        LARGER_INTEGER size;
+        LARGE_INTEGER size;
         size.LowPart = fdata->nFileSizeLow;
         size.HighPart = fdata->nFileSizeHigh;
         info->size = (size_t) size.QuadPart;
@@ -217,7 +217,6 @@ int platform_closedir(platform_dir_handle *dh) {
     }
 #ifdef _WIN32
     FindClose(dh->hFind);
-    free(dh->searchPath);
 #else
     closedir(dh->d);
 #endif
@@ -237,7 +236,7 @@ int platform_stat_file(const char *path, platform_file_info *info) {
         return -1; // error already set
     }
 
-    WIN32_FILE_ATTRIBTE_DATA fad;
+    WIN32_FILE_ATTRIBUTE_DATA fad;
     if (!GetFileAttributesExW(wpath, GetFileExInfoStandard, &fad)) {
         platform_set_error("Failed to stat file: %s", path);
         free(wpath);
@@ -283,7 +282,7 @@ FILE* platform_fopen(const char *path) {
         return NULL; // error set
     }
     FILE *fp = NULL;
-    errno_t = _wfopen_s(&fp, wpath, L"rb");
+    errno_t err = _wfopen_s(&fp, wpath, L"rb");
     free(wpath);
     if (err != 0 || !fp) {
         platform_set_error("Failed to open file: %s", path);

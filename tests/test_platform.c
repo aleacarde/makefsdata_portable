@@ -5,12 +5,16 @@
 #include <string.h>
 
 #ifdef _WIN32
+#include <windows.h>
 #include <direct.h>
 #else
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
 #endif
+
+
+
 
 // Helper function to create temporary directories and files
 static char temp_dir[256];
@@ -24,7 +28,11 @@ void setUp(void) {
 #ifdef _WIN32
     sprintf(temp_dir, "test_temp_%u", (unsigned)GetTickCount());
     _mkdir(temp_dir);
-    _mkdir((char*) (temp_dir + std::string("/subdir")).c_str());
+    printf("[DEBUG] Created directory %s\n", temp_dir);
+    char subdir[512];
+    snprintf(subdir, sizeof(subdir), "%s/subdir", temp_dir);
+    _mkdir(subdir);
+    printf("[DEBUG] Created subdirectory: %s\n", subdir);
 #else
     snprintf(temp_dir, sizeof(temp_dir), "test_temp_%u", (unsigned)rand());
     mkdir(temp_dir, 0700);
