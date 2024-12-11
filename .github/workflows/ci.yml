@@ -86,7 +86,7 @@ jobs:
             if: ${{ runner.os == 'macOS' || runner.os == 'Linux' }}
             run: cmake -B build -S . -DENABLE_ASAN=ON
 
-          - name: Convert toolchain file to Windows format
+          - name: Convert toolchain file to Windows format (Windows)
             if: ${{ runner.os == 'Windows' }}
             run: unix2dos ${{ github.workspace }}/windows-toolchain.cmake
 
@@ -95,7 +95,6 @@ jobs:
             run: cmake -S . -B build -G Ninja -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/windows-toolchain.cmake -DBUILD_TESTING=ON
         
           - name: Build the project
-            if: ${{ runner.os == 'macOS' || runner.os == 'Linux' }}
             run: cmake --build build
         
           - name: Test the project with ctest
