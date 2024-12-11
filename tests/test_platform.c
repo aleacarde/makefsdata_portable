@@ -110,7 +110,7 @@ void test_directory_ops(void) {
             printf("[DEBUG] Entry is a directory: %s\n", info.name);
             dir_count++;
         } else {
-            printf("[DEBUG] Entry is a file: %s (size: %zu bytes)\n", info.name, info.size);
+            printf("[DEBUG] Entry is a file: %s (size: %llu bytes)\n", info.name, (unsigned long long)info.size);
             file_count++;
         }
     }
