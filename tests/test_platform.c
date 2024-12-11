@@ -1,92 +1,10 @@
 #include "unity.h"
 #include "platform.h"
+#include "test_shared.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#ifdef _WIN32
-#include <windows.h>
-#include <direct.h>
-#else
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <unistd.h>
-#endif
-
-
-
-
-// Helper function to create temporary directories and files
-static char temp_dir[256];
-
-void setUp(void) {
-    // Create a temporary directory structure:
-    // temp_dir/
-    //  file1.txt (some content)
-    //  subdir/
-    //    nested.txt
-#ifdef _WIN32
-    sprintf(temp_dir, "test_temp_%u", (unsigned)GetTickCount());
-    _mkdir(temp_dir);
-    printf("[DEBUG] Created directory %s\n", temp_dir);
-    char subdir[512];
-    snprintf(subdir, sizeof(subdir), "%s/subdir", temp_dir);
-    _mkdir(subdir);
-    printf("[DEBUG] Created subdirectory: %s\n", subdir);
-#else
-    snprintf(temp_dir, sizeof(temp_dir), "test_temp_%u", (unsigned)rand());
-    mkdir(temp_dir, 0700);
-    printf("[DEBUG] Created directory: %s\n", temp_dir);
-    char subdir[512];
-    snprintf(subdir, sizeof(subdir), "%s/subdir", temp_dir);
-    mkdir(subdir, 0700);
-    printf("[DEBUG] Created subdirectory: %s\n", subdir);
-#endif
-
-    // Create files:
-    char file1[512];
-    snprintf(file1, sizeof(file1), "%s/file1.txt", temp_dir);
-    FILE *fp = fopen(file1, "wb");
-    printf("[DEBUG] Created file: %s\n", file1);
-    TEST_ASSERT_NOT_NULL_MESSAGE(fp, "Failed to create test file.txt");
-    fputs("Hello", fp);
-    fclose(fp);
-
-    // Create a file in the subdirectory
-    char nested[512];
-    snprintf(nested, sizeof(nested), "%s/subdir/nested.txt", temp_dir);
-    fp = fopen(nested, "wb");
-    printf("[DEBUG] Created file: %s\n", nested);
-    TEST_ASSERT_NOT_NULL_MESSAGE(fp, "Failed to create nested.txt");
-    fputs("World", fp);
-    fclose(fp);
-}
-
-void tearDown(void) {
-    // Cleanup temp_dir after tests - platform-specific removal
-#ifdef _WIN32
-    // On windos remove files first, then directories
-    char file1[512], nested[512], subdir[512];
-    snprintf(file1, sizeof(file1), "%s\\file1.txt", temp_dir);
-    snprintf(nested, sizeof(nested), "%s\\subdir\\nested.txt", temp_dir);
-    snprintf(subdir, sizeof(subdir), "%s\\subdir", temp_dir);
-
-    remove(file1);
-    remove(nested);
-    _rmdir(subdir);
-    _rmdir(temp_dir);
-#else
-    char cmd[1024];
-    snprintf(cmd, sizeof(cmd), "rm -rf %s", temp_dir);
-    int ret = system(cmd);
-
-    // Check return value for system command
-    if (ret != 0) {
-        fprintf(stderr, "Warning: system command failed with return code %d\n", ret);
-    }
-
-#endif
-}
 
 // Test platform_opendir and related functions
 void test_directory_ops(void) {
@@ -203,3 +121,4 @@ void test_error_messages(void) {
     TEST_ASSERT_NOT_EQUAL_INT(0, rc);
     TEST_ASSERT_NOT_EQUAL('\0', platform_get_last_error()[0]);
 }
+

@@ -23,7 +23,7 @@
           "--noprofile",
           "--norc",
           "-c",
-          "if [ -d build-linux ]; then echo \"Cleaning Linux build directory...'\"; rm -rf build-linux; fi"
+          "if [ -d build-linux ]; then echo \"Cleaning Linux build directory...\"; rm -rf build-linux; fi"
         ],
         "group": "build",
         "problemMatcher": []
@@ -111,7 +111,7 @@
           "ubuntu:latest",
           "/bin/bash",
           "-c",
-          "apt-get update && apt-get install -y cmake build-essential ninja-build && cmake -S . -B build-linux -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=ON && cmake --build build-linux"
+          "apt-get update && apt-get install -y cmake build-essential ninja-build && cmake -S . -B build-linux -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=ON && cmake --build build-linux && ctest --test-dir build-linux --output-on-failure"
         ],
         "dependsOn": "Clean Build Linux",
         "group": "build",
@@ -139,35 +139,6 @@
           "--output-on-failure"
         ],
         "dependsOn": "CMake: Build macOS",
-        "group": "test",
-        "problemMatcher": []
-      },
-      {
-        "label": "Run Linux Tests",
-        "type": "shell",
-        "command": "docker",
-        "args": [
-          "run",
-          "--rm",
-          "-v", "${workspaceFolder}:/workspace",
-          "-w", "/workspace",
-          "ubuntu:latest",
-          "/bin/bash",
-          "-c",
-          "cd build-linux && ctest --output-on-failure"
-        ],
-        "dependsOn": "CMake: Build Linux",
-        "group": "test",
-        "problemMatcher": []
-      },
-      {
-        "label": "Run Windows Tests",
-        "type": "shell",
-        "command": "wine",
-        "args": [
-          "./build-windows/bin/tests/test_platform.exe"
-        ],
-        "dependsOn": "CMake: Build Windows",
         "group": "test",
         "problemMatcher": []
       }

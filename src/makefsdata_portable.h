@@ -2,6 +2,7 @@
 #define MAKEFSDATA_PORTABLE_H
 
 #include "platform.h"
+#include "config.h"
 
 
 #endif // MAKEFSDATA_PORTABLE_H

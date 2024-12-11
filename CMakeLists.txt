@@ -57,8 +57,15 @@ endif()
 # Include directories for public headers
 include_directories(${CMAKE_SOURCE_DIR}/include)
 
+# sources, not including main.c
+set(SOURCES_WITHOUT_MAIN
+    src/makefsdata_portable.c
+    src/platform.c
+    src/config.c
+)
+
 # Library target
-add_library(makefsdata_portable STATIC src/makefsdata_portable.c src/platform.c)
+add_library(makefsdata_portable STATIC ${SOURCES_WITHOUT_MAIN})
 target_include_directories(makefsdata_portable PUBLIC ${CMAKES_SOURCE_DIR}/include)
 target_link_libraries(makefsdata_portable PRIVATE ${PLATFORM_SPECIFIC_LIBS})
 set_target_properties(makefsdata_portable PROPERTIES
