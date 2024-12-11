@@ -66,13 +66,6 @@ jobs:
               brew update
               brew upgrade
               brew install cmake
-        
-          - name: Cache Chocolatey (Windows)
-            if: ${{ runner.os == 'Windows' }}
-            uses: actions/cache@v4
-            with:
-                path: C:\ProgramData\chocolatey
-                key: ${{ runner.os }}-choco-cache
 
 
           - name: Install Dependencies (Windows)
