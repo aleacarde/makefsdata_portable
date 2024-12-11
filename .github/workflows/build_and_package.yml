@@ -102,13 +102,16 @@ jobs:
             # Install Dependencies
             - name: Install CMake and MSBuild Tools
               run: |
-                choco install cmake --installargs 'ADD_CMAKE_TO_PATH=System' -y
-                choco install visualstudio2022buildtools -y
-                choco install ninja -y
+                choco install unix2dos -y --confirm
+                choco install cmake --installargs 'ADD_CMAKE_TO_PATH=System' ninja -y --confirm
+                choco install mingw --confirm
+            
+            - name: Convert toolchain file to Windows format
+              run: unix2dos ${{ github.workspace }}/windows-toolchain.cmake
             
             # Configure and Build
             - name: Configure CMake
-              run: cmake -S . -B build -G "Ninja" -DCMAKE_BUILD_TYPE=Release
+              run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/windows-toolchain.cmake
             
             - name: Build Project
               run: cmake --build build
