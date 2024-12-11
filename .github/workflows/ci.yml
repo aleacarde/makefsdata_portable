@@ -80,11 +80,7 @@ jobs:
             run: |
               choco install unix2dos -y --confirm
               choco install cmake --installargs 'ADD_CMAKE_TO_PATH=System' ninja -y --confirm
-              choco install visualstudio2022buildtools -y --params \
-                "--add Microsoft.VisualStudio.Workload.VCTools \
-                       --includeRecommended \
-                       --includeOptional \
-                       --quiet --wait"
+              choco install visualstudio2022buildtools -y --params "--add Microsoft.VisualStudio.Workload.VCTools --includeRecommended --includeOptional --quiet --wait"
 
           - name: Configure CMake (macOS and Linux)
             if: ${{ runner.os == 'macOS' || runner.os == 'Linux' }}
