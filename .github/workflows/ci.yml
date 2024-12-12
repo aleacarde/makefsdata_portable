@@ -77,7 +77,9 @@ jobs:
 
           - name: Configure CMake (macOS and Linux)
             if: ${{ runner.os == 'macOS' || runner.os == 'Linux' }}
-            run: cmake -B build -S . -DENABLE_ASAN=ON
+            run: |
+              cmake -B build -S . -DENABLE_ASAN=ON
+              mkdir -p ${{ github.workspace }}/tests/resources/empty_dir
 
           - name: Convert toolchain file to Windows format (Windows)
             if: ${{ runner.os == 'Windows' }}
@@ -85,7 +87,9 @@ jobs:
 
           - name: Configure CMake (Windows)
             if: ${{ runner.os == 'Windows' }}
-            run: cmake -S . -B build -G Ninja -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/windows-toolchain.cmake -DBUILD_TESTING=ON
+            run: |
+              mkdir ${{ github.workspace }}tests/resources/empty_dir
+              cmake -S . -B build -G Ninja -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/windows-toolchain.cmake -DBUILD_TESTING=ON
         
           - name: Build the project
             run: cmake --build build
