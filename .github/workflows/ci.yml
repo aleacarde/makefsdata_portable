@@ -88,7 +88,7 @@ jobs:
           - name: Configure CMake (Windows)
             if: ${{ runner.os == 'Windows' }}
             run: |
-              mkdir ${{ github.workspace }}tests/resources/empty_dir
+              mkdir ${{ github.workspace }}/tests/resources/empty_dir
               cmake -S . -B build -G Ninja -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/windows-toolchain.cmake -DBUILD_TESTING=ON
         
           - name: Build the project
