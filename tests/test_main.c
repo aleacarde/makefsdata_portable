@@ -124,9 +124,6 @@ void test_scan_subdirs_with_recursion(void);
 int main(void) {
     UNITY_BEGIN();
 
-    // Set up test environment
-    setUp();
-
     // Run platform tests
     RUN_TEST(test_directory_ops);
     RUN_TEST(test_directory_error);
@@ -158,9 +155,6 @@ int main(void) {
     RUN_TEST(test_scan_single_file);
     RUN_TEST(test_scan_subdirs_no_recursion);
     RUN_TEST(test_scan_subdirs_with_recursion);
-
-    // Cleanup
-    tearDown();
 
     return UNITY_END();
 }
