@@ -12,6 +12,7 @@
 
 #include "unity.h"
 #include "test_shared.h"
+#include "file_list.h"
 
 
 void setUp(void) {
@@ -20,6 +21,9 @@ void setUp(void) {
     //  file1.txt (some content)
     //  subdir/
     //    nested.txt
+    memset(&config, 0, sizeof(config));
+
+    file_list_init(&list);
 
     memset(temp_dir, 0, sizeof(temp_dir));
 #ifdef _WIN32
@@ -83,6 +87,7 @@ void tearDown(void) {
     }
 
 #endif
+file_list_free(&list);
 }
 
 // Forward declarations of test functions from test_platform.c
@@ -102,6 +107,18 @@ void test_parse_args_output_no_value(void);
 void test_parse_args_unknown_option(void);
 void test_parse_args_help(void);
 void test_parse_args_no_recursion(void);
+
+// Forward declarations of test functions from test_file_list.c
+void test_file_list_init(void);
+void test_file_list_append_single(void);
+void test_file_list_append_multiple(void);
+void test_file_list_free(void);
+
+// Forward declarations of test functions from test_scan.c
+void test_scan_empty_dir(void);
+void test_scan_single_file(void);
+void test_scan_subdirs_no_recursion(void);
+void test_scan_subdirs_with_recursion(void);
 
 
 int main(void) {
@@ -129,6 +146,18 @@ int main(void) {
     RUN_TEST(test_parse_args_unknown_option);
     RUN_TEST(test_parse_args_help);
     RUN_TEST(test_parse_args_no_recursion);
+
+    // Run file_list tests
+    RUN_TEST(test_file_list_init);
+    RUN_TEST(test_file_list_append_single);
+    RUN_TEST(test_file_list_append_multiple);
+    RUN_TEST(test_file_list_free);
+
+    // Run scan tests
+    RUN_TEST(test_scan_empty_dir);
+    RUN_TEST(test_scan_single_file);
+    RUN_TEST(test_scan_subdirs_no_recursion);
+    RUN_TEST(test_scan_subdirs_with_recursion);
 
     // Cleanup
     tearDown();

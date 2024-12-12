@@ -62,6 +62,8 @@ set(SOURCES_WITHOUT_MAIN
     src/makefsdata_portable.c
     src/platform.c
     src/config.c
+    src/file_list.c
+    src/scan.c
 )
 
 # Library target

@@ -2,6 +2,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "config.h"
+#include "file_list.h"
+#include "scan.h"
+
+extern bool parse_args(int argc, char **argv, config_t *config);
+extern void print_help_message(const char *program_name);
 
 
 int main (int argc, char **argv) {
@@ -16,11 +21,24 @@ int main (int argc, char **argv) {
         return EXIT_SUCCESS;
     }
 
-    printf("Input: %s\n", config.input_dir);
-    printf("Output: %s\n", config.output_file);
-    printf("Recursive: %d\n", (int)config.recursive);
+    file_list_t list;
+    file_list_init(&list);
 
-    printf("There will be stuff here.\n");
-    
+    if (scan_directory(config.input_dir, &config, &list) != 0) {
+        fprintf(stderr, "Failed to scan directory: %s\n", config.input_dir);
+        file_list_free(&list);
+        return EXIT_FAILURE;
+    }
+
+    // Print the files found
+    for (size_t i = 0; i < list.count; i++) {
+        file_info_t *f = &list.files[i];
+        printf("File: %s, Size: %zu\n", f->path, f->size);
+    }
+
+    // TODO: Convert files with convert.c
+    // TODO: Generate fsdata.c with generate.c
+
+    file_list_free(&list);
     return EXIT_SUCCESS;
 }

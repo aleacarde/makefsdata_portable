@@ -3,6 +3,8 @@ set(TEST_SOURCES
     test_shared.c
     test_platform.c
     test_config.c
+    test_file_list.c
+    test_scan.c
     unity.c
 )
 
@@ -18,6 +20,9 @@ target_link_libraries(run_tests PRIVATE makefsdata_portable) # linking the libra
 set_target_properties(run_tests PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin/tests
 )
+
+set(TEST_RESOURCES_DIR ${CMAKE_SOURCE_DIR}/tests/resources)
+target_compile_definitions(run_tests PRIVATE TEST_RESOURCES_DIR=\"${TEST_RESOURCES_DIR}\")
 
 # Enable AddressSanitizer if requested
 if(ENABLE_ASAN)
