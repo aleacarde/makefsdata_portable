@@ -34,7 +34,7 @@ int main (int argc, char **argv) {
     for (size_t i = 0; i < list.count; i++) {
         file_info_t *f = &list.files[i];
 #ifdef _WIN32
-        printf("File: %s, Size: %lu\n", f->path, f->size);
+        printf("File: %s, Size: %llu\n", f->path, f->size);
 #else
         printf("File: %s, Size: %zu\n", f->path, f->size);
 #endif
