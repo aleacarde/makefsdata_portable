@@ -275,27 +275,60 @@ int platform_stat_file(const char *path, platform_file_info *info) {
     return 0;
 }
 
-FILE* platform_fopen(const char *path) {
+platform_file_handle platform_fopen(const char *path, const char *mode) {
 #ifdef _WIN32
     WCHAR *wpath = NULL;
     if (platform_convert_path_to_wchar(path, &wpath) != 0) {
         return NULL; // error set
     }
-    FILE *fp = NULL;
-    errno_t err = _wfopen_s(&fp, wpath, L"rb");
+
+    // Convert `mode` to WCHAR
+    // We'll assume `mode` is short and ASCII-only, so mbstowcs_s is safe.
+
+    WCHAR wmode[32];
+    size_t convertedChars = 0;
+    if (mbstowcs_s(&convertedChars, wmode, _countof(wmode), mode, _TRUNCATE) != 0) {
+        platform_set_error("Failed to convert mode to WCHAR");
+        free(wpath);
+        return NULL;
+    }
+
+    platform_file_handle fh = NULL;
+    errno_t err = _wfopen_s(&fh, wpath, wmode);
     free(wpath);
-    if (err != 0 || !fp) {
+
+    if (err != 0 || !fh) {
         platform_set_error("Failed to open file: %s", path);
         return NULL;
     }
-    return fp;
 #else
-    FILE *fp = fopen(path, "rb");
-    if (!fp) {
+    platform_file_handle fh = fopen(path, mode);
+    if (!fh) {
         platform_set_error("Failed to open file: %s (errno=%d)", path, errno);
     }
-    return fp;
 #endif
+
+return fh;
+}
+
+int platform_fclose(platform_file_handle fh) {
+    return fclose(fh);
+}
+
+size_t platform_fread(void *ptr, size_t size, size_t nmemb, platform_file_handle fh) {
+    return fread(ptr, size, nmemb, fh);
+}
+
+size_t platform_fwrite(const void *ptr, size_t size, size_t nmemb, platform_file_handle fh) {
+    return fwrite(ptr, size, nmemb, fh);
+}
+
+int platform_fseek(platform_file_handle fh, long offset, int whence) {
+    return fseek(fh, offset, whence);
+}
+
+long platform_ftell(platform_file_handle fh) {
+    return ftell(fh);
 }
 
 void platform_normalize_path(char *path, size_t path_len) {

@@ -18,6 +18,27 @@ typedef struct {
     size_t size;        // Size in bytes if a file, 0 if directory
 } platform_file_info;
 
+// Opaque handle for file handling
+typedef FILE* platform_file_handle;
+
+// Open a file with given mode ("rb", "wb", etc.)
+platform_file_handle platform_fopen(const char *path, const char *mode);
+
+// Close the file
+int platform_fclose(platform_file_handle fh);
+
+// Read from file
+size_t platform_fread(void *ptr, size_t size, size_t nmemb, platform_file_handle fh);
+
+// Write to file
+size_t platform_fwrite(const void *ptr, size_t size, size_t nmemb, platform_file_handle fh);
+
+// Seek in file
+int platform_fseek(platform_file_handle fh, long offset, int whence);
+
+// Tell file position
+long platform_ftell(platform_file_handle fh);
+
 // Opaque handle for directory iteration
 typedef struct platform_dir_handle platform_dir_handle;
 
@@ -38,10 +59,6 @@ int platform_closedir(platform_dir_handle *dh);
 // Get information about a specific file.
 // Returns 0 on success, nonzero on error.
 int platform_stat_file(const char *path, platform_file_info *info);
-
-// Open a file for reading (binary mode).
-// Returns a FILE* pointer or NULL on error.
-FILE* platform_fopen(const char *path);
 
 // The caller uses fread/fclose from standard C library to read and close files.
 // This is acceptable since C standard I/O is portable enough.

@@ -5,6 +5,7 @@ set(TEST_SOURCES
     test_config.c
     test_file_list.c
     test_scan.c
+    test_convert.c
     unity.c
 )
 

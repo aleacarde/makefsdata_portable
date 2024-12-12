@@ -4,6 +4,7 @@
 #include "config.h"
 #include "file_list.h"
 #include "scan.h"
+#include "convert.h"
 
 extern bool parse_args(int argc, char **argv, config_t *config);
 extern void print_help_message(const char *program_name);
@@ -30,17 +31,31 @@ int main (int argc, char **argv) {
         return EXIT_FAILURE;
     }
 
-    // Print the files found
     for (size_t i = 0; i < list.count; i++) {
-        file_info_t *f = &list.files[i];
+        file_info_t *finfo = &list.files[i];
+
+        // Read file contents
+        size_t file_size;
+        unsigned char *data = convert_read_file_contents(finfo->path, &file_size);
+        if (!data) {
+            fprintf(stderr, "Failed to read file: %s\n", finfo->path);
+            continue; // Skip this file
+        }
+
+        // Generate a variable name from the file index
+        char var_name[64];
 #ifdef _WIN32
-        printf("File: %s, Size: %llu\n", f->path, f->size);
+        snprintf(var_name, sizeof(var_name), "file_%llu", i);
 #else
-        printf("File: %s, Size: %zu\n", f->path, f->size);
+        snprintf(var_name, sizeof(var_name), "file_%zu", i);
 #endif
+
+        // Until Generate.c is implemented, we will write the array to stdout for now
+        convert_write_c_array(var_name, data, file_size, stdout);
+
+        free(data);
     }
 
-    // TODO: Convert files with convert.c
     // TODO: Generate fsdata.c with generate.c
 
     file_list_free(&list);

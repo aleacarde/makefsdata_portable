@@ -73,21 +73,74 @@ void test_stat_file(void) {
     TEST_ASSERT_NOT_EQUAL_MESSAGE('\0', platform_get_last_error()[0], "Expected error message");
 }
 
-void test_fopen(void) {
-    char file1[512];
-    snprintf(file1, sizeof(file1), "%s/file1.txt", temp_dir);
+// Test opening an existing file in read mode
+void test_platform_fopen_read(void) {
+    platform_file_handle fh = platform_fopen(test_filename, "rb");
+    TEST_ASSERT_NOT_NULL_MESSAGE(fh, "Failed to open existing file in rb mode.");
+    platform_fclose(fh);
+}
 
-    FILE *fp = platform_fopen(file1);
-    TEST_ASSERT_NOT_NULL_MESSAGE(fp, platform_get_last_error());
-    fseek(fp, 0, SEEK_END);
-    long size = ftell(fp);
-    TEST_ASSERT_EQUAL_INT(5, (int)size);
-    fclose(fp);
+// Test reading from file
+void test_platform_fread(void) {
+    platform_file_handle fh = platform_fopen(test_filename, "rb");
+    TEST_ASSERT_NOT_NULL_MESSAGE(fh, "Failed to open file for reading.");
 
-    // Nonexistent file
-    fp = platform_fopen("no_such_file_xyz");
-    TEST_ASSERT_NULL(fp);
-    TEST_ASSERT_NOT_EQUAL_MESSAGE('\0', platform_get_last_error()[0], "Expected error message");
+    char buffer[64];
+    size_t bytes_read = platform_fread(buffer, 1, sizeof(buffer)-1, fh);
+    TEST_ASSERT_MESSAGE(bytes_read > 0, "Expected to read some data.");
+    buffer[bytes_read] = '\0';
+    // Check if the content matches what was written in setUp
+    TEST_ASSERT_MESSAGE(strstr(buffer, "Hello!") != NULL, "Expected 'Hello!' in file content.");
+
+    platform_fclose(fh);
+}
+
+// Test seeking and telling
+void test_platform_fseek_ftell(void) {
+    platform_file_handle fh = platform_fopen(test_filename, "rb");
+    TEST_ASSERT_NOT_NULL_MESSAGE(fh, "Failed to open file for seeking test.");
+
+    // Read first line and confirm position changes
+    char buffer[32];
+    memset(buffer, 0, sizeof(buffer));
+    size_t bytes_read = platform_fread(buffer, 1, 6, fh); // "Hello!"
+    TEST_ASSERT_EQUAL_UINT_MESSAGE(6, bytes_read, "Expected to read 6 bytes for 'Hello!");
+    TEST_ASSERT_EQUAL_INT_MESSAGE(6, platform_ftell(fh), "Expected file position to be 6 after reading 6 bytes");
+
+    // Seek back to start
+    TEST_ASSERT_EQUAL_INT_MESSAGE(0, platform_fseek(fh, 0, SEEK_SET), "platform_fseek to start failed.");
+    TEST_ASSERT_EQUAL_INT_MESSAGE(0, platform_ftell(fh), "Expected file position to be 0 after seeking to start.");
+
+    platform_fclose(fh);
+}
+
+// Test opening a non-existent file
+void test_platform_fopen_nonexistent(void) {
+    platform_file_handle fh = platform_fopen("nonexistent_file.txt", "rb");
+    TEST_ASSERT_NULL_MESSAGE(fh, "Expected NULL for non-existent file.");
+}
+
+// Test writing to a file
+void test_platform_fwrite(void) {
+    // Open a file for writing
+    platform_file_handle fh = platform_fopen(test_filename, "wb");
+    TEST_ASSERT_NOT_NULL_MESSAGE(fh, "Failed to open file for writing.");
+
+    const char *data = "Some new content";
+    size_t written = platform_fwrite(data, 1, strlen(data), fh);
+    TEST_ASSERT_EQUAL_UINT_MESSAGE(strlen(data), written, "Failed to write all data.");
+
+    platform_fclose(fh);
+
+    // Verify by reading back
+    fh = platform_fopen(test_filename, "rb");
+    TEST_ASSERT_NOT_NULL_MESSAGE(fh, "Failed to reopen file after writing.");
+    char buffer[64];
+    size_t bytes_read = platform_fread(buffer, 1, sizeof(buffer)-1, fh);
+    buffer[bytes_read] = '\0';
+    TEST_ASSERT_EQUAL_STRING_MESSAGE(data, buffer, "Read content differs from written content.");
+
+    platform_fclose(fh);
 }
 
 #ifdef _WIN32
@@ -99,18 +152,18 @@ void test_unicode_paths(void) {
     char utf8name[512];
     snprintf(utf8name, sizeof(utf8name), "%s/subdir/\xC3\xA9test.txt", temp_dir); // "étest.txt"
 
-    FILE *fp = fopen(utf8name, "wb");
-    TEST_ASSERT_NOT_NULL_MESSAGE(fp, "Failed to create unicode test file");
-    fputs("Data", fp);
-    fclose(fp);
+    platform_file_handle fh = fopen(utf8name, "wb");
+    TEST_ASSERT_NOT_NULL_MESSAGE(fh, "Failed to create unicode test file");
+    fputs("Data", fh);
+    fclose(fh);
 
     // Now open with platform_fopen
-    FILE *fp2 = platform_fopen(utf8name);
-    TEST_ASSERT_NOT_NULL_MESSAGE(fp2, platform_get_last_error());
-    fseek(fp2, 0, SEEK_END);
-    long sz = ftell(fp2);
+    platform_file_handle fh2 = platform_fopen(utf8name, "rb");
+    TEST_ASSERT_NOT_NULL_MESSAGE(fh2, platform_get_last_error());
+    fseek(fh2, 0, SEEK_END);
+    long sz = ftell(fh2);
     TEST_ASSERT_EQUAL_INT(4, (int)sz);
-    fclose(fp2);
+    fclose(fh2);
 }
 #endif
 
@@ -121,4 +174,6 @@ void test_error_messages(void) {
     TEST_ASSERT_NOT_EQUAL_INT(0, rc);
     TEST_ASSERT_NOT_EQUAL('\0', platform_get_last_error()[0]);
 }
+
+
 

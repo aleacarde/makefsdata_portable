@@ -64,6 +64,7 @@ set(SOURCES_WITHOUT_MAIN
     src/config.c
     src/file_list.c
     src/scan.c
+    src/convert.c
 )
 
 # Library target
